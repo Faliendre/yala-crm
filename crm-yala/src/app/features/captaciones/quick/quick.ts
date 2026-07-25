@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { CrmService } from '../../../core/services/crm.service';
 
 @Component({
@@ -39,17 +40,17 @@ import { CrmService } from '../../../core/services/crm.service';
 
         <!-- Mini map preview -->
         <div class="relative w-full h-32 rounded-lg overflow-hidden border border-white/10 group" id="map-preview">
-          <img 
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAD-BmNBOeZ5LRlB7elx4U1p-i-OM-mZnAZ724Qt5xb2f30vZ99MdFDTnLm4jTPO-FBvMXuSxPQbvm7L28csYIDPFwdi-uFtI8ngI6IqyFPeZ2NZsR2IP1QradQIVsDWOFKRI7nR-wKzUBDXNPHR7n2DIN48MGQSvckv7qZ_Eb5yoixsZAk9nJZIQ1HEMokA_tuVvnZhsoBTDFNx6iblR3cnjQja5JANKh4GB52avyCePIfW2JRFGbZexDWOEXyk5lWaZyNBhlcjnMu"
-            alt="Map Preview"
-            class="w-full h-full object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700" 
-            [class.grayscale-0]="gpsSuccess"
-            [class.opacity-100]="gpsSuccess"
-          />
-          <div class="absolute inset-0 flex items-center justify-center bg-background/40 backdrop-blur-[1px]" [class.hidden]="gpsSuccess">
+          <iframe *ngIf="gpsSuccess && latitude && longitude"
+                  [src]="getSafeMapUrl()"
+                  class="w-full h-full border-none"
+                  allowfullscreen=""
+                  loading="lazy"
+                  referrerpolicy="no-referrer-when-downgrade">
+          </iframe>
+          <div class="absolute inset-0 flex items-center justify-center bg-background/40 backdrop-blur-[1px] pointer-events-none" *ngIf="!gpsSuccess">
             <p class="text-xs text-on-surface-variant italic">{{ gpsStatus }}</p>
           </div>
-          <div class="absolute inset-0 bg-transparent flex flex-col justify-end p-2" *ngIf="gpsSuccess">
+          <div class="absolute inset-0 bg-transparent flex flex-col justify-end p-2 pointer-events-none" *ngIf="gpsSuccess">
             <div class="bg-black/60 p-2 rounded text-[10px] text-primary backdrop-blur-md">
               <p class="font-bold text-white">{{ address }}</p>
               <p class="opacity-75 font-mono text-[9px] mt-0.5">{{ latitude }}, {{ longitude }} (± 3m)</p>
@@ -155,6 +156,7 @@ import { CrmService } from '../../../core/services/crm.service';
 export class QuickCaptacionComponent {
   private crmService = inject(CrmService);
   private router = inject(Router);
+  private sanitizer = inject(DomSanitizer);
 
   // Form states
   businessName = '';
@@ -173,6 +175,14 @@ export class QuickCaptacionComponent {
 
   error = '';
   isSaving = false;
+
+  getSafeMapUrl(): SafeResourceUrl {
+    if (!this.latitude || !this.longitude) {
+      return '';
+    }
+    const url = `https://maps.google.com/maps?q=${this.latitude},${this.longitude}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+  }
 
   autoDetectGPS() {
     this.gpsLoading = true;

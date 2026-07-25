@@ -2,6 +2,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { CrmService } from '../../../core/services/crm.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Captacion } from '../../../shared/interfaces/crm.interface';
@@ -112,12 +113,14 @@ import { Captacion } from '../../../shared/interfaces/crm.interface';
 
             <!-- Map View layout -->
             <div class="w-full h-32 rounded-xl overflow-hidden border border-white/10 relative group">
-              <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBeJ9M9j8fe5F1ExYmNGr2sJXD_OjARDj0RrerpOkfzOYtwabGF4LfiWFkYrXU8wWQLjZmYqoRZRGW5CZLupaA_PWwr8MN-g4Y6966ok2hwdhx9sxz4SlFZptCHHHTd1FR2KILCVWr3IOj2aGUKY1EY1iO5LxpAEjSgBiaG1v2gIFKdcWf_NVtRpGxxhbHA_InwGtg-2HRQc2QYPOxUShDE8woh-6dK-rmxZ1m3GtJgdgdgLVPHWRNEGHGZFS_JGXpHuflG_3RQNiv3" 
-                   alt="Mapa" 
-                   class="w-full h-full object-cover grayscale opacity-50 group-hover:grayscale-0 transition-all duration-500"
-                   [class.grayscale-0]="gpsSuccess"
-                   [class.opacity-100]="gpsSuccess" />
-              <div class="absolute inset-0 flex items-center justify-center bg-background/30 backdrop-blur-[1px]" *ngIf="!gpsSuccess">
+              <iframe *ngIf="gpsSuccess && model.google_maps"
+                      [src]="getSafeMapUrl()"
+                      class="w-full h-full border-none"
+                      allowfullscreen=""
+                      loading="lazy"
+                      referrerpolicy="no-referrer-when-downgrade">
+              </iframe>
+              <div class="absolute inset-0 flex items-center justify-center bg-background/30 backdrop-blur-[1px] pointer-events-none" *ngIf="!gpsSuccess">
                 <span class="text-xs text-outline italic">Esperando coordenadas geográficas...</span>
               </div>
             </div>
@@ -311,6 +314,7 @@ export class CaptacionFormComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private sanitizer = inject(DomSanitizer);
 
   isEditMode = false;
   isSaving = false;
@@ -319,6 +323,14 @@ export class CaptacionFormComponent implements OnInit {
   
   isAdmin = false;
   sellers: any[] = [];
+
+  getSafeMapUrl(): SafeResourceUrl {
+    if (!this.model.google_maps) {
+      return '';
+    }
+    const url = `https://maps.google.com/maps?q=${this.model.google_maps}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+  }
 
   gpsLoading = false;
   gpsSuccess = false;
