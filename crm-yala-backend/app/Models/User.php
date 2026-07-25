@@ -1,0 +1,48 @@
+<?php
+
+namespace App\Models;
+
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+
+use Laravel\Sanctum\HasApiTokens;
+
+#[Fillable(['username', 'password', 'role', 'last_seen', 'avatar'])]
+#[Hidden(['password', 'remember_token'])]
+class User extends Authenticatable
+{
+    /** @use HasFactory<UserFactory> */
+    use HasApiTokens, HasFactory, Notifiable;
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'password' => 'hashed',
+        ];
+    }
+
+    public function captaciones()
+    {
+        return $this->hasMany(Captacion::class, 'seller_id');
+    }
+
+    public function visits()
+    {
+        return $this->hasMany(Visit::class, 'seller_id');
+    }
+
+    public function commissions()
+    {
+        return $this->hasMany(Commission::class, 'seller_id');
+    }
+}
